@@ -6,7 +6,90 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
   <script type="text/babel">
+    const handleResponse = (xhr) => {
+      //Get and parse response
+      const type = xhr.getResponseHeader('content-type');
 
+      //begin html wrapper
+      const content = document.querySelector("#content");
+      const h1 = document.querySelector('h1');
+      const p = document.querySelector('p');
+
+      //JSON
+      if (type === 'application/json') {
+        //Parse the response text
+        const obj = JSON.parse(xhr.response);
+        
+        //HTML elements
+        h1.textContent = `${obj.id}`;
+        p.textContent = `${obj.message}`;
+        console.log(obj);
+      } //xml
+      else if (type ==='text/xml'){
+        //Get the message from the xml response
+        const message = xhr.responseXML.querySelector('message').textContent;
+        const id = xhr.responseXML.querySelector('id').textContent;
+        
+        //Add the xml fields to our html elements
+        h1.textContent = `id: ${id}`
+        p.textContent = `message: ${message}`;
+        console.log(xhr.responseXML); 
+      }
+    };
+
+    //send an xhr request
+    const updateRequested = (e, url, acceptedType) => {
+      //Adds in the correct values
+      const urlPath = url.value;
+      const method = acceptedType.value;
+      
+      const xhr = new XMLHttpRequest();
+      
+      xhr.open('GET', urlPath);
+      xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+      xhr.setRequestHeader ("Accept", method);
+
+      //if get request or head request
+      if(method == 'get') {
+        //set onload to parse request and get json message
+        xhr.onload = () => handleResponse(xhr);
+      } else {
+        //set onload to check meta data and NOT message
+        //There are no body responses in a head request
+        xhr.onload = () => handleResponse(xhr);
+      }
+
+      //send ajax request
+      xhr.send();
+
+      //cancel browser's default action
+      e.preventDefault();
+
+      //return false to prevent page redirection from a form
+      return false;
+    };
+
+    const init = () => {
+      
+      //for display
+      const h1 = document.createElement('h1');
+      const p = document.createElement('p');
+      content.appendChild(h1);
+      content.appendChild(p);
+      
+      //grab parts
+      const sendButton = document.querySelector("#send");
+      const pageSelect = document.querySelector("#page");
+      const typeSelect = document.querySelector("#type");
+
+      //function to call stuff with the right params
+      const getPage = (e) => updateRequested(e, pageSelect, typeSelect);
+
+      //hook up functions
+      sendButton.addEventListener('click', getPage);
+    };
+
+    window.onload = init;
   </script>
 </head>
 <body>
